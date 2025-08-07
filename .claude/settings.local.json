@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(python test:*)",
+      "Bash(dir:*)",
+      "Bash(Get-ChildItem -Filter *.xlsx -Recurse)",
+      "Bash(rm:*)",
+      "Bash(pip uninstall:*)",
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(.venvScriptsactivate)",
+      "Bash(call .venvScriptsactivate)",
+      "Bash(.venvScriptspip install unidecode rapidfuzz)",
+      "Bash(mkdir:*)",
+      "Bash(move test_temp_reports.py testes_temporarios )",
+      "Bash(move:*)",
+      "Bash(move testar_melhorias_matching.py testes_temporarios )",
+      "Bash(move verificar_nomes_empresas.py testes_temporarios )",
+      "Bash(move fix_linha_873.bat testes_temporarios )",
+      "Bash(move fix_manual_instrucoes.txt testes_temporarios )",
+      "Bash(move fix_run_py_production.bat testes_temporarios )",
+      "Bash(move fix_run_py_production_v2.bat testes_temporarios )",
+      "Bash(move verifica_fix.bat testes_temporarios )",
+      "Bash(move fix_production_compatibility.py testes_temporarios)",
+      "Bash(mv:*)",
+      "Bash(ls:*)",
+      "Bash(cp:*)",
+      "WebFetch(domain:paulicon1-my.sharepoint.com)",
+      "Bash(find:*)",
+      "Bash(del:*)",
+      "Bash(git init:*)",
+      "Bash(git remote add:*)",
+      "Bash(git config:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": []
+  }
+}
