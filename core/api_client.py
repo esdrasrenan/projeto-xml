@@ -5,6 +5,7 @@ import time
 import logging
 import socket
 import threading
+import os
 from typing import Dict, Any, Optional, List, Tuple
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -29,7 +30,15 @@ class SiegApiClient:
     BASE_URL = "https://api.sieg.com"
     REQUEST_TIMEOUT = (10, 30)  # Timeout de conexão (10s) e leitura (30s) para evitar travamentos
     REPORT_REQUEST_TIMEOUT = (10, 20)  # Timeout mais curto para relatórios: conexão (10s) e leitura (20s)
-    ABSOLUTE_TIMEOUT = 45  # Timeout absoluto máximo para qualquer operação (segundos)
+    ABSOLUTE_TIMEOUT = 45  # Timeout absoluto máximo para qualquer operação (segundos) - PADRÃO
+    
+    # Timeouts configuráveis por tipo de documento (podem ser sobrescritos por variáveis de ambiente)
+    TIMEOUT_NFE_ABSOLUTE = int(os.getenv("SIEG_TIMEOUT_ABSOLUTO_NFE", "90"))   # NFe: 90s padrão
+    TIMEOUT_CTE_ABSOLUTE = int(os.getenv("SIEG_TIMEOUT_ABSOLUTO_CTE", "180"))  # CTe: 180s padrão (3 minutos)
+    TIMEOUT_NFE_READ = int(os.getenv("SIEG_TIMEOUT_LEITURA_NFE", "120"))       # NFe: 120s leitura
+    TIMEOUT_CTE_READ = int(os.getenv("SIEG_TIMEOUT_LEITURA_CTE", "180"))       # CTe: 180s leitura
+    TIMEOUT_CONNECTION = int(os.getenv("SIEG_TIMEOUT_CONEXAO", "10"))          # Conexão: 10s
+    
     RATE_LIMIT_DELAY = 2  # Segundos de espera entre requisições (30 req/min)
     RETRY_COUNT = 2  # Reduzido de 3 para 2 para evitar longos travamentos
     RETRY_BACKOFF_FACTOR = 0.5 # Reduzido de 1 para 0.5 segundos (0.5, 1)
@@ -60,6 +69,34 @@ class SiegApiClient:
         session.mount("http://", HTTPAdapter(max_retries=retries))
         return session
 
+    def _get_timeout_by_type(self, xml_type: int, timeout_type: str = "absolute") -> int:
+        """
+        Retorna o timeout apropriado baseado no tipo de documento.
+        
+        Args:
+            xml_type: Tipo de XML (1=NFe, 2=CTe, etc.)
+            timeout_type: "absolute" ou "read"
+            
+        Returns:
+            Timeout em segundos
+        """
+        if xml_type == 2:  # CTe
+            if timeout_type == "absolute":
+                return self.TIMEOUT_CTE_ABSOLUTE
+            elif timeout_type == "read":
+                return self.TIMEOUT_CTE_READ
+        elif xml_type == 1:  # NFe
+            if timeout_type == "absolute":
+                return self.TIMEOUT_NFE_ABSOLUTE
+            elif timeout_type == "read":
+                return self.TIMEOUT_NFE_READ
+        
+        # Padrão para outros tipos
+        if timeout_type == "absolute":
+            return self.ABSOLUTE_TIMEOUT
+        else:
+            return 30  # Padrão de leitura
+    
     def _enforce_rate_limit(self):
         """Garante que o intervalo mínimo entre requisições seja respeitado."""
         now = time.monotonic()
@@ -104,6 +141,72 @@ class SiegApiClient:
         finally:
             executor.shutdown(wait=False)
 
+    def _make_report_request_direct(self, endpoint: str, payload: Dict[str, Any], xml_type: int) -> Any:
+        """
+        Método otimizado para requisições de relatórios - SEM overhead.
+        Faz requisição direta similar ao n8n que funciona em ~34 segundos.
+        
+        Args:
+            endpoint: O caminho do endpoint (ex: "/api/relatorio/xml").
+            payload: O dicionário com os dados do relatório.
+            xml_type: Tipo de XML para determinar timeout apropriado.
+            
+        Returns:
+            Resposta da API (dict, string, etc).
+        """
+        full_url = f"{self.BASE_URL}{endpoint}"
+        
+        # API key na URL como query parameter (mantém codificada)
+        # Nota: Mantemos a chave decodificada pois o requests vai re-codificar
+        params = {"api_key": self.api_key}
+        
+        # Headers mínimos
+        headers = {"Content-Type": "application/json"}
+        
+        # Timeout baseado no tipo de documento (mas sem ThreadPool)
+        timeout_read = self._get_timeout_by_type(xml_type, "read")
+        timeout_tuple = (self.TIMEOUT_CONNECTION, timeout_read)
+        
+        logger.info(f"[OTIMIZADO] Requisição DIRETA para relatório {endpoint}")
+        logger.debug(f"Timeout configurado: {timeout_tuple[0]}s conexão, {timeout_tuple[1]}s leitura")
+        
+        try:
+            # Requisição DIRETA - sem session, sem retries, sem ThreadPool
+            response = requests.post(
+                full_url,
+                params=params,
+                json=payload,
+                headers=headers,
+                timeout=timeout_tuple
+            )
+            
+            # Log da resposta
+            logger.debug(f"Resposta recebida ({response.status_code}) de {endpoint}")
+            
+            # Processar resposta
+            if response.status_code == 200:
+                try:
+                    return response.json()
+                except json.JSONDecodeError:
+                    # Se não for JSON, retorna o texto
+                    return response.text
+            else:
+                # Para erros, tenta pegar JSON de erro ou texto
+                try:
+                    error_data = response.json()
+                    logger.error(f"Erro da API ({response.status_code}): {error_data}")
+                    raise ValueError(f"Erro da API: {error_data}")
+                except json.JSONDecodeError:
+                    logger.error(f"Erro HTTP {response.status_code}: {response.text[:500]}")
+                    response.raise_for_status()
+                    
+        except requests.Timeout as e:
+            logger.error(f"Timeout na requisição direta para {endpoint}: {e}")
+            raise
+        except requests.RequestException as e:
+            logger.error(f"Erro de requisição para {endpoint}: {e}")
+            raise
+    
     def _make_request(self, endpoint: str, payload: Optional[Dict[str, Any]] = None, timeout: Optional[Tuple[float, float]] = None) -> Any:
         """
         Método base para realizar requisições POST para a API SIEG.
@@ -509,23 +612,18 @@ class SiegApiClient:
             
             logger.info(f"Chamando {endpoint} com payload: {json.dumps(payload)} {log_context}")
             
-            if use_absolute_timeout:
-                # Usar timeout absoluto para evitar travamentos
-                logger.debug(f"Usando timeout absoluto de {self.ABSOLUTE_TIMEOUT}s para {log_context}")
-                try:
-                    response_data = self._execute_with_absolute_timeout(
-                        self._make_request,
-                        endpoint,
-                        payload,
-                        timeout=self.REPORT_REQUEST_TIMEOUT,
-                        timeout_seconds=self.ABSOLUTE_TIMEOUT
-                    )
-                except TimeoutError as e:
-                    logger.error(f"TIMEOUT ABSOLUTO ao baixar relatório para {log_context}: {e}")
-                    # Re-lançar TimeoutError para ser tratado pelo chamador
-                    raise
-            else:
-                response_data = self._make_request(endpoint, payload, timeout=self.REPORT_REQUEST_TIMEOUT)
+            # OTIMIZAÇÃO: Usar requisição direta para relatórios (sem overhead)
+            # Relatórios podem demorar muito (30-180s), então não precisamos do ThreadPool
+            try:
+                response_data = self._make_report_request_direct(endpoint, payload, xml_type)
+                logger.info(f"Relatório baixado com sucesso via método otimizado para {log_context}")
+            except requests.Timeout as e:
+                logger.error(f"TIMEOUT ao baixar relatório para {log_context}: {e}")
+                # Re-lançar como TimeoutError para manter compatibilidade
+                raise TimeoutError(f"Timeout ao baixar relatório: {e}")
+            except Exception as e:
+                logger.error(f"Erro ao baixar relatório via método otimizado para {log_context}: {e}")
+                raise
 
             if isinstance(response_data, str):
                 # Verificar se é a mensagem "Nenhum arquivo xml encontrado"

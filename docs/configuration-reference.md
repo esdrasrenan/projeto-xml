@@ -43,16 +43,25 @@ projeto/
 ```python
 BASE_URL = "https://api.sieg.com"
 REQUEST_TIMEOUT = (10, 30)  # (conexão, leitura) em segundos
-REPORT_REQUEST_TIMEOUT = (10, 20)  # Timeout específico para relatórios
-ABSOLUTE_TIMEOUT = 45  # Timeout absoluto máximo (novo em 2025-08-03)
+REPORT_REQUEST_TIMEOUT = (10, 20)  # DESCONTINUADO - veja timeouts por tipo
+ABSOLUTE_TIMEOUT = 45  # Timeout absoluto para XMLs individuais
+
+# Timeouts otimizados por tipo de documento (novo em 2025-08-25)
+TIMEOUT_NFE_ABSOLUTE = 90   # NFe: timeout absoluto
+TIMEOUT_CTE_ABSOLUTE = 180  # CTe: timeout absoluto (3 min)
+TIMEOUT_NFE_READ = 120      # NFe: timeout de leitura
+TIMEOUT_CTE_READ = 180      # CTe: timeout de leitura
 ```
 
 | Parâmetro | Valor Padrão | Descrição | Ajustável |
 |-----------|--------------|-----------|-----------|
 | `BASE_URL` | `https://api.sieg.com` | URL base da API SIEG | ❌ Hardcoded |
-| `REQUEST_TIMEOUT` | `(10, 30)` | Timeout (conexão, leitura) | ✅ Via código |
-| `REPORT_REQUEST_TIMEOUT` | `(10, 20)` | Timeout para download de relatórios | ✅ Via código |
-| `ABSOLUTE_TIMEOUT` | `45` | Timeout absoluto via ThreadPoolExecutor (evita travamentos) | ✅ Via código |
+| `REQUEST_TIMEOUT` | `(10, 30)` | Timeout para XMLs individuais | ✅ Via código |
+| `TIMEOUT_NFE_ABSOLUTE` | `90` | Timeout absoluto para relatórios NFe | ✅ Via env `SIEG_TIMEOUT_ABSOLUTO_NFE` |
+| `TIMEOUT_CTE_ABSOLUTE` | `180` | Timeout absoluto para relatórios CTe | ✅ Via env `SIEG_TIMEOUT_ABSOLUTO_CTE` |
+| `TIMEOUT_NFE_READ` | `120` | Timeout de leitura para NFe | ✅ Via env `SIEG_TIMEOUT_LEITURA_NFE` |
+| `TIMEOUT_CTE_READ` | `180` | Timeout de leitura para CTe | ✅ Via env `SIEG_TIMEOUT_LEITURA_CTE` |
+| `ABSOLUTE_TIMEOUT` | `45` | Timeout via ThreadPoolExecutor (apenas XMLs individuais) | ✅ Via código |
 
 #### **Rate Limiting**
 ```python

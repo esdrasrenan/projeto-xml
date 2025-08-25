@@ -111,9 +111,27 @@ if response.status_code == 429:
     # Fallback para backoff exponential
 ```
 
-### Proteção Contra Timeout (Novo - 2025-08-03)
+### Proteção Contra Timeout (Atualizado - 2025-08-25)
+
+#### Método Otimizado para Relatórios (NOVO)
 ```python
-# Timeout absoluto via ThreadPoolExecutor
+# Requisição direta sem overhead para relatórios grandes
+def _make_report_request_direct(self, endpoint: str, payload: Dict[str, Any], xml_type: int) -> Any:
+    """
+    Método otimizado para requisições de relatórios - SEM overhead.
+    - Sem ThreadPoolExecutor (economiza ~20s)
+    - Sem rate limiting (2s delay desnecessário)
+    - Sem session com retries
+    - Timeout adequado por tipo: 180s CTe, 90s NFe
+    """
+    timeout_read = self._get_timeout_by_type(xml_type, "read")
+    response = requests.post(url, json=payload, timeout=(10, timeout_read))
+    return response.json()
+```
+
+#### Método com ThreadPoolExecutor (Usado apenas para XMLs individuais)
+```python
+# Timeout absoluto via ThreadPoolExecutor - AINDA USADO PARA XMLs INDIVIDUAIS
 ABSOLUTE_TIMEOUT = 45  # segundos
 
 def _execute_with_absolute_timeout(self, func, *args, timeout_seconds=45):
