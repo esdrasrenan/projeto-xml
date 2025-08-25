@@ -1,0 +1,7 @@
+requests
+pandas
+openpyxl
+loguru
+lxml
+unidecode
+rapidfuzz
