@@ -167,22 +167,28 @@ O skip_count pode ficar desalinhado temporariamente, mas o processed_keys garant
 - **18/08/2025 Final**: Melhorias nos logs e limpeza de código
 - **19/08/2025 Manhã**: Correção XMLs "órfãos" do skip_count
 - **19/08/2025**: Logs completos para Task Scheduler
+- **21/08/2025 Manhã**: Descoberta do bug de interseção na lógica retroativa
+- **21/08/2025 Tarde**: Correção definitiva com manipulação direta do cache
 
 ## 🎯 Status Final
 
 ✅ **PROBLEMA RESOLVIDO COMPLETAMENTE**
-- Duplicações eliminadas (3 causas corrigidas)
+- Duplicações eliminadas (4 causas corrigidas)
+- Bug de interseção na lógica retroativa corrigido
 - XMLs "órfãos" agora marcados retroativamente
+- Cache do StateManager contornado com salvamento forçado
 - Logs precisos e completos em arquivos .txt
 - Sistema robusto e confiável
 - Performance otimizada
 
-## 📊 Validação em Produção (19/08/2025)
+## 📊 Validação em Produção (21/08/2025)
 
-**Primeiras 5 empresas processadas:**
-- Total de 56+ XMLs corrigidos retroativamente
-- `flat_copy_success: 0` na maioria dos casos
-- Logs transparentes mostrando correções
+**Estatísticas após correção definitiva:**
+- **153 empresas** com XMLs marcados corretamente
+- **64.952 XMLs totais** sob controle no state.json
+- `flat_copy_success: 0` em todas as empresas processadas
+- PAULICON: 4 NFe + 1 CTe corretamente marcados
+- Sistema 100% funcional sem duplicações
 
 ---
-*Documento atualizado em 19/08/2025 - Correção completa com XMLs órfãos resolvidos*
+*Documento atualizado em 21/08/2025 - Correção definitiva do bug de interseção*

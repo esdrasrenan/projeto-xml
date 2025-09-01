@@ -6,9 +6,46 @@
       "Bash(git init:*)",
       "Bash(git remote add:*)",
       "Bash(git config:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Read(/W:\\core/**)",
+      "Read(/W:\\/**)",
+      "Bash(python:*)",
+      "Read(/W:\\/**)",
+      "Bash(del W:test_viamex_cte.py)",
+      "Bash(del:*)",
+      "Read(/W:\\/**)",
+      "Read(/W:\\/**)",
+      "Read(/W:\\/**)",
+      "Read(/W:\\docs/**)",
+      "Read(W:\\/**)",
+      "Read(W:\\logs\\08-2025\\1147_VIAMEX_TRANSPORTES_E_LOGISTICA_LTDA/**)",
+      "Read(Y:\\2025\\1147_VIAMEX_TRANSPORTES_E_LOGISTICA_LTDA/**)",
+      "Read(W:\\docs/**)",
+      "Read(W:\\docs/**)",
+      "Read(W:\\docs/**)",
+      "Read(W:\\estado\\08-2025/**)",
+      "Read(W:\\estado\\08-2025/**)",
+      "Read(Y:\\2025\\1147_VIAMEX_TRANSPORTES_E_LOGISTICA_LTDA\\08/**)",
+      "Read(Y:\\2025\\1147_VIAMEX_TRANSPORTES_E_LOGISTICA_LTDA\\08/**)",
+      "Read(Y:\\2025\\1147_VIAMEX_TRANSPORTES_E_LOGISTICA_LTDA\\07\\CTe/**)",
+      "Read(W:\\logs\\08-2025\\1147_VIAMEX_TRANSPORTES_E_LOGISTICA_LTDA/**)",
+      "Read(Y:\\2025\\1147_VIAMEX_TRANSPORTES_E_LOGISTICA_LTDA\\08\\CTe/**)",
+      "Read(W:\\logs/**)",
+      "Read(W:\\logs/**)",
+      "Read(W:\\transactions/**)",
+      "Read(W:\\transactions\\completed/**)",
+      "Bash(dir:*)",
+      "Read(W:\\transactions\\completed/**)",
+      "Read(W:\\transactions\\completed/**)",
+      "Read(W:\\/**)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "additionalDirectories": [
+      "W:\\",
+      "Y:\\"
+    ]
   }
 }
